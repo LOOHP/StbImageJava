@@ -22,7 +22,7 @@ public class BmpDecoder extends Decoder {
 	private static final long[] mul_table = {0, 0xff, 0x55, 0x49, 0x11, 0x21, 0x41, 0x81, 0x01};
 	private static final long[] shift_table = {0, 0, 0, 1, 0, 2, 4, 6, 0};
 
-	private BmpDecoder(java.io.InputStream stream) {
+	private BmpDecoder(InputStream stream) {
 		super(stream);
 	}
 

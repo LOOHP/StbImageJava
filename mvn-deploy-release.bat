@@ -1,1 +1,0 @@
-mvn -DperformRelease=true deploy

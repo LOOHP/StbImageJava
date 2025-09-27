@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.nothings.stb</groupId>
-    <artifactId>image</artifactId>
+    <artifactId>StbImageJava</artifactId>
     <version>2.22.15</version>
     <name>Java port of stb_image.h</name>
 
@@ -38,11 +38,4 @@
             </plugins>
         </pluginManagement>
     </build>
-
-    <distributionManagement>
-        <repository>
-            <id>bintray-rds1983-maven</id>
-            <url>https://api.bintray.com/maven/rds1983/maven/stb.image/;publish=1</url>
-        </repository>
-    </distributionManagement>
 </project>
