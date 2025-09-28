@@ -22,8 +22,23 @@ Replace `VERSION` with the version number.
 # Usage
 Following code loads image from byte array and converts it to 32-bit RGBA:
 ```java
-  byte[] bytes = Files.readAllBytes(new File("image.jpg").toPath());
-  ImageResult image = ImageResult.FromData(bytes, ColorComponents.RedGreenBlueAlpha, true);
+byte[] bytes = Files.readAllBytes(new File("image.jpg").toPath());
+ImageResult image = ImageResult.FromData(bytes, ColorComponents.RedGreenBlueAlpha, true);
+```
+Following code converts the result into a
+```java
+int w = image.getWidth();
+int h = image.getHeight();
+BufferedImage bufferedImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+byte[] colors = image.getData();
+for (int i = 0; i < w * h; i++) {
+    int index = i * 4;
+    int r = (colors[index] << 16) & 0x00FF0000;
+    int g = (colors[index + 1] << 8) & 0x0000FF00;
+    int b = colors[index + 2] & 0x000000FF;
+    int a = (colors[index + 3] << 24) & 0xFF000000;
+    bufferedImage.setRGB(i % w, i / w, a | r | g | b);
+}
 ```
 
 # License
