@@ -5,6 +5,7 @@ import org.nothings.stb.image.ImageInfo;
 import org.nothings.stb.image.ImageResult;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -130,7 +131,7 @@ public class JpgDecoder extends Decoder {
 		for (int i = 0; i < dequant.length; ++i) dequant[i] = new int[64];
 	}
 
-	private static int stbi__build_huffman(stbi__huffman h, int[] count) throws Exception {
+	private static int stbi__build_huffman(stbi__huffman h, int[] count) throws IOException {
 		int i = 0;
 		int j = 0;
 		int k = 0;
@@ -194,7 +195,7 @@ public class JpgDecoder extends Decoder {
 		code_buffer &= MAX_UNSIGNED_INT;
 	}
 
-	private void stbi__grow_buffer_unsafe() throws Exception {
+	private void stbi__grow_buffer_unsafe() throws IOException {
 		do {
 			long b = nomore != 0 ? 0 : stbi__get8();
 			if (b == 0xff) {
@@ -214,7 +215,7 @@ public class JpgDecoder extends Decoder {
 		} while (code_bits <= 24);
 	}
 
-	private int stbi__jpeg_huff_decode(stbi__huffman h) throws Exception {
+	private int stbi__jpeg_huff_decode(stbi__huffman h) throws IOException {
 		long temp = 0;
 		int c = 0;
 		int k = 0;
@@ -251,7 +252,7 @@ public class JpgDecoder extends Decoder {
 		return h.values[c];
 	}
 
-	private int stbi__extend_receive(int n) throws Exception {
+	private int stbi__extend_receive(int n) throws IOException {
 		int sgn = 0;
 		if (code_bits < n)
 			stbi__grow_buffer_unsafe();
@@ -265,7 +266,7 @@ public class JpgDecoder extends Decoder {
 		return (int) (k + (stbi__jbias[n] & ~sgn));
 	}
 
-	private int stbi__jpeg_get_bits(int n) throws Exception {
+	private int stbi__jpeg_get_bits(int n) throws IOException {
 		if (code_bits < n)
 			stbi__grow_buffer_unsafe();
 		long k = Utility._lrotl(code_buffer, n);
@@ -277,7 +278,7 @@ public class JpgDecoder extends Decoder {
 		return (int) k;
 	}
 
-	private int stbi__jpeg_get_bit() throws Exception {
+	private int stbi__jpeg_get_bit() throws IOException {
 		if (code_bits < 1)
 			stbi__grow_buffer_unsafe();
 		long k = code_buffer;
@@ -289,7 +290,7 @@ public class JpgDecoder extends Decoder {
 	}
 
 	private int stbi__jpeg_decode_block(short[] data, stbi__huffman hdc, stbi__huffman hac, short[] fac, int b,
-										int[] dequant) throws Exception {
+										int[] dequant) throws IOException {
 		int diff = 0;
 		int dc = 0;
 		int k = 0;
@@ -344,7 +345,7 @@ public class JpgDecoder extends Decoder {
 		return 1;
 	}
 
-	private int stbi__jpeg_decode_block_prog_dc(FakePtrShort data, stbi__huffman hdc, int b) throws Exception {
+	private int stbi__jpeg_decode_block_prog_dc(FakePtrShort data, stbi__huffman hdc, int b) throws IOException {
 		int diff = 0;
 		int dc = 0;
 		int t = 0;
@@ -369,7 +370,7 @@ public class JpgDecoder extends Decoder {
 		return 1;
 	}
 
-	private int stbi__jpeg_decode_block_prog_ac(FakePtrShort data, stbi__huffman hac, short[] fac) throws Exception {
+	private int stbi__jpeg_decode_block_prog_ac(FakePtrShort data, stbi__huffman hac, short[] fac) throws IOException {
 		int k = 0;
 		if (spec_start == 0)
 			stbi__err("can't merge dc and ac");
@@ -643,7 +644,7 @@ public class JpgDecoder extends Decoder {
 		}
 	}
 
-	private int stbi__get_marker() throws Exception {
+	private int stbi__get_marker() throws IOException {
 		int x = 0;
 		if (marker != 0xff) {
 			x = marker;
@@ -668,7 +669,7 @@ public class JpgDecoder extends Decoder {
 		eob_run = 0;
 	}
 
-	private int stbi__parse_entropy_coded_data() throws Exception {
+	private int stbi__parse_entropy_coded_data() throws IOException {
 		stbi__jpeg_reset();
 		if (progressive == 0) {
 			if (scan_n == 1) {
@@ -825,7 +826,7 @@ public class JpgDecoder extends Decoder {
 		}
 	}
 
-	private int stbi__process_marker(int m) throws Exception {
+	private int stbi__process_marker(int m) throws IOException {
 		int L = 0;
 		switch (m) {
 			case 0xff:
@@ -947,7 +948,7 @@ public class JpgDecoder extends Decoder {
 		return 0;
 	}
 
-	private int stbi__process_scan_header() throws Exception {
+	private int stbi__process_scan_header() throws IOException {
 		int i = 0;
 		int Ls = stbi__get16be();
 		scan_n = stbi__get8();
@@ -1014,7 +1015,7 @@ public class JpgDecoder extends Decoder {
 		return why;
 	}
 
-	private int stbi__process_frame_header(int scan) throws Exception {
+	private int stbi__process_frame_header(int scan) throws IOException {
 		int Lf = 0;
 		int p = 0;
 		int i = 0;
@@ -1102,7 +1103,7 @@ public class JpgDecoder extends Decoder {
 		return 1;
 	}
 
-	private boolean stbi__decode_jpeg_header(int scan) throws Exception {
+	private boolean stbi__decode_jpeg_header(int scan) throws IOException {
 		jfif = 0;
 		app14_color_transform = -1;
 		marker = 0xff;
@@ -1131,7 +1132,7 @@ public class JpgDecoder extends Decoder {
 		return stbi__process_frame_header(scan) != 0;
 	}
 
-	private int stbi__decode_jpeg_image() throws Exception {
+	private int stbi__decode_jpeg_image() throws IOException {
 		int m = 0;
 		for (m = 0; m < 4; m++) {
 			img_comp[m].raw_data = null;
@@ -1291,7 +1292,7 @@ public class JpgDecoder extends Decoder {
 		return (int) ((t + (t >> 8)) >> 8);
 	}
 
-	private ImageResult load_jpeg_image(ColorComponents req_comp) throws Exception {
+	private ImageResult load_jpeg_image(ColorComponents req_comp) throws IOException {
 		int out_x, out_y, comp;
 		out_x = out_y = comp = 0;
 
@@ -1460,7 +1461,7 @@ public class JpgDecoder extends Decoder {
 				output);
 	}
 
-	private ImageResult InternalDecode(ColorComponents requiredComponents) throws Exception {
+	private ImageResult InternalDecode(ColorComponents requiredComponents) throws IOException {
 		stbi__setup_jpeg();
 
 		return load_jpeg_image(requiredComponents);
@@ -1495,13 +1496,13 @@ public class JpgDecoder extends Decoder {
 		}
 	}
 
-	public static ImageResult Decode(byte[] data, ColorComponents requiredComponents) throws Exception {
+	public static ImageResult Decode(byte[] data, ColorComponents requiredComponents) throws IOException {
 		ByteArrayInputStream stream = new ByteArrayInputStream(data);
 		JpgDecoder decoder = new JpgDecoder(stream);
 		return decoder.InternalDecode(requiredComponents);
 	}
 
-	public static ImageResult Decode(byte[] data) throws Exception {
+	public static ImageResult Decode(byte[] data) throws IOException {
 		return Decode(data, null);
 	}
 }

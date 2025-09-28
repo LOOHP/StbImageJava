@@ -1,5 +1,6 @@
 package org.nothings.stb.image.decoding;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 class ZLib {
@@ -115,7 +116,7 @@ class ZLib {
 		return stbi__zhuffman_decode_slowpath(z);
 	}
 
-	private int stbi__zexpand(FakePtrByte zout, int n) throws Exception {
+	private int stbi__zexpand(FakePtrByte zout, int n) throws IOException {
 		int cur = 0;
 		int limit = 0;
 		int old_limit = 0;
@@ -132,7 +133,7 @@ class ZLib {
 		return 1;
 	}
 
-	private int stbi__parse_huffman_block() throws Exception {
+	private int stbi__parse_huffman_block() throws IOException {
 		FakePtrByte zout = this.zout.clone();
 		for (; ; ) {
 			int z = stbi__zhuffman_decode(z_length);
@@ -190,7 +191,7 @@ class ZLib {
 		}
 	}
 
-	private static int stbi__zbuild_huffman(stbi__zhuffman z, FakePtrShort sizelist, int num) throws Exception {
+	private static int stbi__zbuild_huffman(stbi__zhuffman z, FakePtrShort sizelist, int num) throws IOException {
 		int i = 0;
 		int k = 0;
 		int code = 0;
@@ -240,7 +241,7 @@ class ZLib {
 		return 1;
 	}
 
-	private int stbi__compute_huffman_codes() throws Exception {
+	private int stbi__compute_huffman_codes() throws IOException {
 		stbi__zhuffman z_codelength = new stbi__zhuffman();
 		short[] lencodes = new short[286 + 32 + 137];
 		short[] codelength_sizes = new short[19];
@@ -295,7 +296,7 @@ class ZLib {
 		return 1;
 	}
 
-	private int stbi__parse_uncompressed_block() throws Exception {
+	private int stbi__parse_uncompressed_block() throws IOException {
 		int[] header = new int[4];
 		int len = 0;
 		int nlen = 0;
@@ -325,7 +326,7 @@ class ZLib {
 		return 1;
 	}
 
-	private int stbi__parse_zlib_header() throws Exception {
+	private int stbi__parse_zlib_header() throws IOException {
 		int cmf = stbi__zget8();
 		int cm = cmf & 15;
 		int flg = stbi__zget8();
@@ -338,7 +339,7 @@ class ZLib {
 		return 1;
 	}
 
-	private int stbi__parse_zlib(int parse_header) throws Exception {
+	private int stbi__parse_zlib(int parse_header) throws IOException {
 		int _final_ = 0;
 		int type = 0;
 		if (parse_header != 0)
@@ -373,7 +374,7 @@ class ZLib {
 		return 1;
 	}
 
-	private int stbi__do_zlib(byte[] obuf, int olen, int exp, int parse_header) throws Exception {
+	private int stbi__do_zlib(byte[] obuf, int olen, int exp, int parse_header) throws IOException {
 		zout_start = obuf;
 		zout = new FakePtrByte(obuf);
 		zout_end = new FakePtrByte(obuf, olen);
@@ -382,7 +383,7 @@ class ZLib {
 	}
 
 	public static Pair<byte[], Integer> stbi_zlib_decode_malloc_guesssize_headerflag(byte[] buffer, int len,
-																					  int initial_size, int parse_header) throws Exception {
+																					  int initial_size, int parse_header) throws IOException {
 		ZLib a = new ZLib();
 		byte[] p = new byte[initial_size];
 		a.zbuffer = new FakePtrByte(buffer);

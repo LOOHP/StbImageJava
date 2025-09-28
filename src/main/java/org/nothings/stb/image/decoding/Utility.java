@@ -25,36 +25,36 @@ public class Utility
 		s.skip(count);
 	}
 
-	public static short stbi__get8(InputStream s) throws Exception
+	public static short stbi__get8(InputStream s) throws IOException
 	{
 		int b = s.read();
 		if (b == -1)
 		{
-			throw new Exception("EOF");
+			throw new IOException("EOF");
 		}
 
 		return (short)b;
 	}
 
-	public static int stbi__get16be(InputStream s) throws Exception
+	public static int stbi__get16be(InputStream s) throws IOException
 	{
 		int z = stbi__get8(s);
 		return (z << 8) + stbi__get8(s);
 	}
 
-	public static long stbi__get32be(InputStream s) throws Exception
+	public static long stbi__get32be(InputStream s) throws IOException
 	{
 		long z = stbi__get16be(s);
 		return (z << 16) + stbi__get16be(s);
 	}
 
-	public static int stbi__get16le(InputStream s) throws Exception
+	public static int stbi__get16le(InputStream s) throws IOException
 	{
 		int z = stbi__get8(s);
 		return z + (stbi__get8(s) << 8);
 	}
 
-	public static long stbi__get32le(InputStream s) throws Exception
+	public static long stbi__get32le(InputStream s) throws IOException
 	{
 		long z = stbi__get16le(s);
 		return z + (stbi__get16le(s) << 16);
@@ -70,7 +70,7 @@ public class Utility
 		return ((r * 77) + (g * 150) + (29 * b)) >> 8;
 	}
 
-	public static byte[] stbi__convert_format16(byte[] data, int img_n, int req_comp, long x, long y) throws Exception {
+	public static byte[] stbi__convert_format16(byte[] data, int img_n, int req_comp, long x, long y) throws IOException {
         int xi = (int)x, yi = (int)y;
         if (req_comp == img_n) return data;
 
@@ -246,7 +246,7 @@ public class Utility
         return out;
 	}
 
-	public static byte[] stbi__convert_format(byte[] data, int img_n, int req_comp, int x, int y) throws Exception
+	public static byte[] stbi__convert_format(byte[] data, int img_n, int req_comp, int x, int y) throws IOException
 	{
 		int i = 0;
 		int j = 0;

@@ -2,6 +2,8 @@ package org.nothings.stb.image;
 
 import org.nothings.stb.image.decoding.*;
 
+import java.io.IOException;
+
 public	class ImageResult
 {
 	private int width;
@@ -50,7 +52,7 @@ public	class ImageResult
 		return data;
 	}
 
-	public static ImageResult FromData(byte[] data, ColorComponents requiredComponents, boolean use8BitsPerChannel) throws Exception
+	public static ImageResult FromData(byte[] data, ColorComponents requiredComponents, boolean use8BitsPerChannel) throws IOException
 	{
 		ImageResult result = null;
 		if (JpgDecoder.Test(data))
@@ -80,7 +82,7 @@ public	class ImageResult
 
 		if (result == null)
 		{
-			throw new Exception("unknown image type");
+			throw new IOException("unknown image type");
 		}
 
 		if (use8BitsPerChannel && result.bitsPerChannel != 8)

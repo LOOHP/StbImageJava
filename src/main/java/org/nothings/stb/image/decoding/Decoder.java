@@ -22,23 +22,23 @@ public class Decoder {
 		InputStream = stream;
 	}
 
-	protected long stbi__get32be() throws Exception {
+	protected long stbi__get32be() throws IOException {
 		return Utility.stbi__get32be(InputStream);
 	}
 
-	protected int stbi__get16be() throws Exception {
+	protected int stbi__get16be() throws IOException {
 		return Utility.stbi__get16be(InputStream);
 	}
 
-	protected long stbi__get32le() throws Exception {
+	protected long stbi__get32le() throws IOException {
 		return Utility.stbi__get32le(InputStream);
 	}
 
-	protected int stbi__get16le() throws Exception {
+	protected int stbi__get16le() throws IOException {
 		return Utility.stbi__get16le(InputStream);
 	}
 
-	protected short stbi__get8() throws Exception {
+	protected short stbi__get8() throws IOException {
 		return Utility.stbi__get8(InputStream);
 	}
 
@@ -56,7 +56,7 @@ public class Decoder {
 		return InputStream.available() == 0;
 	}
 
-	static void stbi__err(String message) throws Exception {
-		throw new Exception(message);
+	static void stbi__err(String message) throws IOException {
+		throw new IOException(message);
 	}
 }

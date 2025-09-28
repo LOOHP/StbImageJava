@@ -5,6 +5,7 @@ import org.nothings.stb.image.ImageInfo;
 import org.nothings.stb.image.ImageResult;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 public class BmpDecoder extends Decoder {
@@ -76,7 +77,7 @@ public class BmpDecoder extends Decoder {
 		return (int) (v * (int) mul_table[bits]) >> (int) shift_table[bits];
 	}
 
-	private void stbi__bmp_parse_header(stbi__bmp_data info) throws Exception {
+	private void stbi__bmp_parse_header(stbi__bmp_data info) throws IOException {
 		int hsz = 0;
 		if (stbi__get8() != 'B' || stbi__get8() != 'M')
 			stbi__err("not BMP");
@@ -158,7 +159,7 @@ public class BmpDecoder extends Decoder {
 		}
 	}
 
-	private ImageResult InternalDecode(ColorComponents requiredComponents) throws Exception {
+	private ImageResult InternalDecode(ColorComponents requiredComponents) throws IOException {
 		byte[] _out_;
 		long mr = 0;
 		long mg = 0;
@@ -365,7 +366,7 @@ public class BmpDecoder extends Decoder {
 		);
 	}
 
-	private static boolean TestInternal(InputStream stream) throws Exception {
+	private static boolean TestInternal(InputStream stream) throws IOException {
 		if (stream.read() != 'B')
 			return false;
 		if (stream.read() != 'M')
@@ -405,13 +406,13 @@ public class BmpDecoder extends Decoder {
 		}
 	}
 
-	public static ImageResult Decode(byte[] data, ColorComponents requiredComponents) throws Exception {
+	public static ImageResult Decode(byte[] data, ColorComponents requiredComponents) throws IOException {
 		ByteArrayInputStream stream = new ByteArrayInputStream(data);
 		BmpDecoder decoder = new BmpDecoder(stream);
 		return decoder.InternalDecode(requiredComponents);
 	}
 
-	public static ImageResult Decode(byte[] data) throws Exception {
+	public static ImageResult Decode(byte[] data) throws IOException {
 		return Decode(data, null);
 	}
 }

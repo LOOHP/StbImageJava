@@ -5,6 +5,7 @@ import org.nothings.stb.image.ImageInfo;
 import org.nothings.stb.image.ImageResult;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
@@ -43,14 +44,14 @@ public class PngDecoder extends Decoder {
 		super(stream);
 	}
 
-	private stbi__pngchunk stbi__get_chunk_header() throws Exception {
+	private stbi__pngchunk stbi__get_chunk_header() throws IOException {
 		stbi__pngchunk c = new stbi__pngchunk();
 		c.length = stbi__get32be();
 		c.type = (int) stbi__get32be();
 		return c;
 	}
 
-	private static boolean stbi__check_png_header(InputStream input) throws Exception {
+	private static boolean stbi__check_png_header(InputStream input) throws IOException {
 		int i = 0;
 		for (i = 0; i < 8; ++i)
 			if (Utility.stbi__get8(input) != png_sig[i])
@@ -72,7 +73,7 @@ public class PngDecoder extends Decoder {
 	}
 
 	private int stbi__create_png_image_raw(FakePtrByte rawOriginal, long raw_len, int out_n,
-										   int x, int y, int depth, int color) throws Exception {
+										   int x, int y, int depth, int color) throws IOException {
 		FakePtrByte raw = rawOriginal.clone();
 		int shorts = depth == 16 ? 2 : 1;
 		int i = 0;
@@ -322,7 +323,7 @@ public class PngDecoder extends Decoder {
 	}
 
 	private int stbi__create_png_image(FakePtrByte image_dataOriginal, long image_data_len, int out_n, int depth,
-									   int color, int interlaced) throws Exception {
+									   int color, int interlaced) throws IOException {
 		FakePtrByte image_data = image_dataOriginal.clone();
 		int shorts = depth == 16 ? 2 : 1;
 		int out_shorts = out_n * shorts;
@@ -521,7 +522,7 @@ public class PngDecoder extends Decoder {
 		}
 	}
 
-	private int stbi__parse_png_file(int scan, int req_comp) throws Exception {
+	private int stbi__parse_png_file(int scan, int req_comp) throws IOException {
 		short[] palette = new short[1024];
 		short pal_img_n = (short) 0;
 		short has_trans = (short) 0;
@@ -752,7 +753,7 @@ public class PngDecoder extends Decoder {
 		}
 	}
 
-	private ImageResult InternalDecode(ColorComponents requiredComponents) throws Exception {
+	private ImageResult InternalDecode(ColorComponents requiredComponents) throws IOException {
 		int req_comp = ColorComponents.toReqComp(requiredComponents);
 		if (req_comp < 0 || req_comp > 4)
 			stbi__err("bad req_comp");
@@ -811,13 +812,13 @@ public class PngDecoder extends Decoder {
 		}
 	}
 
-	public static ImageResult Decode(byte[] data, ColorComponents requiredComponents) throws Exception {
+	public static ImageResult Decode(byte[] data, ColorComponents requiredComponents) throws IOException {
 		ByteArrayInputStream stream = new ByteArrayInputStream(data);
 		PngDecoder decoder = new PngDecoder(stream);
 		return decoder.InternalDecode(requiredComponents);
 	}
 
-	public static ImageResult Decode(byte[] data) throws Exception {
+	public static ImageResult Decode(byte[] data) throws IOException {
 		return Decode(data, null);
 	}
 }

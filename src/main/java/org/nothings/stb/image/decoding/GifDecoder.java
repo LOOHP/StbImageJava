@@ -5,6 +5,7 @@ import org.nothings.stb.image.ImageInfo;
 import org.nothings.stb.image.ImageResult;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
@@ -50,7 +51,7 @@ public class GifDecoder extends Decoder {
 		lpal = new byte[256 * 4];
 	}
 
-	private void stbi__gif_parse_colortable(byte[] pal, int num_entries, int transp) throws Exception {
+	private void stbi__gif_parse_colortable(byte[] pal, int num_entries, int transp) throws IOException {
 		int i;
 		for (i = 0; i < num_entries; ++i) {
 			pal[i * 4 + 2] = (byte)stbi__get8();
@@ -60,7 +61,7 @@ public class GifDecoder extends Decoder {
 		}
 	}
 
-	private int stbi__gif_header(int is_info) throws Exception {
+	private int stbi__gif_header(int is_info) throws IOException {
 		short version = 0;
 		if (stbi__get8() != 'G' || stbi__get8() != 'I' || stbi__get8() != 'F' || stbi__get8() != '8')
 			stbi__err("not GIF");
@@ -113,7 +114,7 @@ public class GifDecoder extends Decoder {
 		}
 	}
 
-	private byte[] stbi__process_gif_raster() throws Exception {
+	private byte[] stbi__process_gif_raster() throws IOException {
 		short lzw_cs = 0;
 		int len = 0;
 		int init_code = 0;
@@ -193,7 +194,7 @@ public class GifDecoder extends Decoder {
 			}
 	}
 
-	private Pair<byte[], Integer> stbi__gif_load_next(FakePtrByte two_back) throws Exception {
+	private Pair<byte[], Integer> stbi__gif_load_next(FakePtrByte two_back) throws IOException {
 		int dispose = 0;
 		int first_frame = 0;
 		int pi = 0;
@@ -389,11 +390,11 @@ public class GifDecoder extends Decoder {
 
 		}*/
 
-	private ImageResult InternalDecode(ColorComponents requiredComponents) throws Exception {
+	private ImageResult InternalDecode(ColorComponents requiredComponents) throws IOException {
 		int comp;
 
 		Pair<byte[], Integer> u = stbi__gif_load_next(null);
-		if (u == null) throw new Exception("could not decode gif");
+		if (u == null) throw new IOException("could not decode gif");
 
 		byte[] data = u.first;
 		if (requiredComponents != null && requiredComponents != ColorComponents.RedGreenBlueAlpha)
@@ -407,7 +408,7 @@ public class GifDecoder extends Decoder {
 				data);
 	}
 
-	private static boolean InternalTest(InputStream stream) throws Exception {
+	private static boolean InternalTest(InputStream stream) throws IOException {
 		int sz = 0;
 		if (Utility.stbi__get8(stream) != 'G' || Utility.stbi__get8(stream) != 'I' || Utility.stbi__get8(stream) != 'F' ||
 				Utility.stbi__get8(stream) != '8')
@@ -441,13 +442,13 @@ public class GifDecoder extends Decoder {
 		}
 	}
 
-	public static ImageResult Decode(byte[] data, ColorComponents requiredComponents) throws Exception {
+	public static ImageResult Decode(byte[] data, ColorComponents requiredComponents) throws IOException {
 		ByteArrayInputStream stream = new ByteArrayInputStream(data);
 		GifDecoder decoder = new GifDecoder(stream);
 		return decoder.InternalDecode(requiredComponents);
 	}
 
-	public static ImageResult Decode(byte[] data) throws Exception {
+	public static ImageResult Decode(byte[] data) throws IOException {
 		return Decode(data, null);
 	}
 }

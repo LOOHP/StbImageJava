@@ -5,6 +5,7 @@ import org.nothings.stb.image.ImageInfo;
 import org.nothings.stb.image.ImageResult;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 public class PsdDecoder extends Decoder {
@@ -12,7 +13,7 @@ public class PsdDecoder extends Decoder {
 		super(stream);
 	}
 
-	private int stbi__psd_decode_rle(FakePtrByte po, int pixelCount) throws Exception {
+	private int stbi__psd_decode_rle(FakePtrByte po, int pixelCount) throws IOException {
 		FakePtrByte p = po.clone();
 		int count = 0;
 		int nleft = 0;
@@ -49,7 +50,7 @@ public class PsdDecoder extends Decoder {
 		return 1;
 	}
 
-    private int stbi__psd_decode_rle16(FakePtrByte po, int pixelCount) throws Exception {
+    private int stbi__psd_decode_rle16(FakePtrByte po, int pixelCount) throws IOException {
         FakePtrByte p = po.clone();
         int count = 0;
         while (pixelCount - count > 0) {
@@ -81,7 +82,7 @@ public class PsdDecoder extends Decoder {
         return 1;
     }
 
-    private ImageResult InternalDecode(ColorComponents requiredComponents, int bpc) throws Exception {
+    private ImageResult InternalDecode(ColorComponents requiredComponents, int bpc) throws IOException {
         int pixelCount, channelCount, compression, channel, i, bitdepth, w, h;
         byte[] _out_;
 
@@ -265,17 +266,17 @@ public class PsdDecoder extends Decoder {
 		}
 	}
 
-	public static ImageResult Decode(byte[] data, ColorComponents requiredComponents, int bpc) throws Exception {
+	public static ImageResult Decode(byte[] data, ColorComponents requiredComponents, int bpc) throws IOException {
 		ByteArrayInputStream stream = new ByteArrayInputStream(data);
 		PsdDecoder decoder = new PsdDecoder(stream);
 		return decoder.InternalDecode(requiredComponents, bpc);
 	}
 
-	public static ImageResult Decode(byte[] data, ColorComponents requiredComponents) throws Exception {
+	public static ImageResult Decode(byte[] data, ColorComponents requiredComponents) throws IOException {
 		return Decode(data, requiredComponents, 8);
 	}
 
-	public static ImageResult Decode(byte[] data) throws Exception {
+	public static ImageResult Decode(byte[] data) throws IOException {
 		return Decode(data, null);
 	}
 }

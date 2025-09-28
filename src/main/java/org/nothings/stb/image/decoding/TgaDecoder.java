@@ -5,6 +5,7 @@ import org.nothings.stb.image.ImageInfo;
 import org.nothings.stb.image.ImageResult;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 public class TgaDecoder extends Decoder {
@@ -29,7 +30,7 @@ public class TgaDecoder extends Decoder {
 		}
 	}
 
-	private void stbi__tga_read_rgb16(FakePtrByte _out_) throws Exception {
+	private void stbi__tga_read_rgb16(FakePtrByte _out_) throws IOException {
 		int px = stbi__get16le();
 		int fiveBitMask = 31;
 		int r = (px >> 10) & fiveBitMask;
@@ -40,7 +41,7 @@ public class TgaDecoder extends Decoder {
 		_out_.setAt(2, b * 255 / 31);
 	}
 
-	private ImageResult InternalDecode(ColorComponents requiredComponents) throws Exception {
+	private ImageResult InternalDecode(ColorComponents requiredComponents) throws IOException {
 		int tga_offset = stbi__get8();
 		int tga_indexed = stbi__get8();
 		int tga_image_type = stbi__get8();
@@ -271,13 +272,13 @@ public class TgaDecoder extends Decoder {
 		}
 	}
 
-	public static ImageResult Decode(byte[] data, ColorComponents requiredComponents) throws Exception {
+	public static ImageResult Decode(byte[] data, ColorComponents requiredComponents) throws IOException {
 		ByteArrayInputStream stream = new ByteArrayInputStream(data);
 		TgaDecoder decoder = new TgaDecoder(stream);
 		return decoder.InternalDecode(requiredComponents);
 	}
 
-	public static ImageResult Decode(byte[] data) throws Exception {
+	public static ImageResult Decode(byte[] data) throws IOException {
 		return Decode(data, null);
 	}
 }
