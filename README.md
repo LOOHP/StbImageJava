@@ -20,12 +20,12 @@ StbImageJava is Java port of stb_image.h 2.22. Or - in other words - it's a Java
 Replace `VERSION` with the version number.
 
 # Usage
-Following code loads image from byte array and converts it to 32-bit RGBA:
+The following code loads an image from byte array and converts it to 32-bit RGBA:
 ```java
 byte[] bytes = Files.readAllBytes(new File("image.jpg").toPath());
 ImageResult image = ImageResult.FromData(bytes, ColorComponents.RedGreenBlueAlpha, true);
 ```
-Following code converts the result into a
+The following code converts the result into a `java.awt.image.BufferedImage`
 ```java
 int w = image.getWidth();
 int h = image.getHeight();
