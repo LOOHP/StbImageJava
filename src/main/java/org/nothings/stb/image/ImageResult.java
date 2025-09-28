@@ -50,7 +50,7 @@ public	class ImageResult
 		return data;
 	}
 
-	public static ImageResult FromData(byte[] data, ColorComponents  requiredComponents) throws Exception
+	public static ImageResult FromData(byte[] data, ColorComponents requiredComponents, boolean use8BitsPerChannel) throws Exception
 	{
 		ImageResult result = null;
 		if (JpgDecoder.Test(data))
@@ -83,11 +83,10 @@ public	class ImageResult
 			throw new Exception("unknown image type");
 		}
 
-/*		if (use8BitsPerChannel && result.bitsPerChannel != 8)
+		if (use8BitsPerChannel && result.bitsPerChannel != 8)
 		{
-			result.data = Utility.stbi__convert_16_to_8(result.data, result.width, result.height, (int)result.colorComponents);
-			throw new UnsupportedOperationException("16-bit images are not supported yet");
-		}*/
+			result.data = Utility.stbi__convert_16_to_8(result.data, result.width, result.height, result.colorComponents.getValue());
+		}
 
 		return result;
 	}

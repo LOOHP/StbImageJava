@@ -317,14 +317,6 @@ public class PngDecoder extends Decoder {
 						}
 				}
 			}
-		else if (depth == 16)
-			throw new UnsupportedOperationException("16-bit images are not supported yet");
-		/*				ShortFakePtr cur = ptr;
-						int* cur16 = (int*)(cur);
-						for (i = (long)(0); (i) < (x * y * out_n); ++i, cur16++, cur.move(2))
-						{
-							*cur16 = (int)((cur[0] << 8) | cur[1]);
-						}*/
 
 		return 1;
 	}
@@ -426,31 +418,35 @@ public class PngDecoder extends Decoder {
 	}
 
 	private int stbi__compute_transparency16(int[] tc, int out_n) {
-		throw new UnsupportedOperationException("16-bit images are not supported yet");
+        long pixel_count = (long) img_x * img_y;
+        byte[] out = _out_; // big-endian pairs
+        int step = out_n * 2;
 
-		/*			long i = 0;
-					long pixel_count = (long)(img_x * img_y);
-					FakePtr<Integer> p = new FakePtr<Integer>(_out_);
-					if ((out_n) == (2))
-					{
-						for (i = (long)(0); (i) < (pixel_count); ++i)
-						{
-							p[1] = (int)((p[0]) == (tc[0]) ? 0 : 65535);
-							p += 2;
-						}
-					}
-					else
-					{
-						for (i = (long)(0); (i) < (pixel_count); ++i)
-						{
-							if ((((p[0]) == (tc[0])) && ((p[1]) == (tc[1]))) && ((p[2]) == (tc[2])))
-								p[3] = (int)(0);
-							p += 4;
-						}
-					}
-
-					return (int)(1);*/
-	}
+        if (out_n == 2) {
+            // GA: if gray == tc[0], set A = 0x0000 else 0xFFFF
+            for (long i = 0, off = 0; i < pixel_count; ++i, off += step) {
+                int g = ((out[(int)off] & 0xFF) << 8) | (out[(int)off + 1] & 0xFF);
+                int a_off = (int)off + 2; // alpha high byte
+                if (g == (tc[0] & 0xFFFF)) {
+                    out[a_off] = 0; out[a_off + 1] = 0;                // A = 0x0000
+                } else {
+                    out[a_off] = (byte)0xFF; out[a_off + 1] = (byte)0xFF; // A = 0xFFFF
+                }
+            }
+        } else {
+            // RGBA: if (R,G,B) == (tc[0],tc[1],tc[2]) set A = 0x0000
+            for (long i = 0, off = 0; i < pixel_count; ++i, off += step) {
+                int r = ((out[(int)off] & 0xFF) << 8) | (out[(int)off + 1] & 0xFF);
+                int g = ((out[(int)off + 2] & 0xFF) << 8) | (out[(int)off + 3] & 0xFF);
+                int b = ((out[(int)off + 4] & 0xFF) << 8) | (out[(int)off + 5] & 0xFF);
+                if (r == (tc[0] & 0xFFFF) && g == (tc[1] & 0xFFFF) && b == (tc[2] & 0xFFFF)) {
+                    int a_off = (int)off + 6; // alpha high byte
+                    out[a_off] = 0; out[a_off + 1] = 0;
+                }
+            }
+        }
+        return 1;
+    }
 
 	private int stbi__expand_png_palette(short[] palette, int len, int pal_img_n) {
 		int i = 0;

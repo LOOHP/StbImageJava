@@ -49,142 +49,190 @@ public class PsdDecoder extends Decoder {
 		return 1;
 	}
 
-	private ImageResult InternalDecode(ColorComponents requiredComponents, int bpc) throws Exception {
-		int pixelCount = 0;
-		int channelCount = 0;
-		int compression = 0;
-		int channel = 0;
-		int i = 0;
-		int bitdepth = 0;
-		int w = 0;
-		int h = 0;
-		byte[] _out_;
-		if (stbi__get32be() != 0x38425053)
-			stbi__err("not PSD");
-		if (stbi__get16be() != 1)
-			stbi__err("wrong version");
-		stbi__skip(6);
-		channelCount = stbi__get16be();
-		if (channelCount < 0 || channelCount > 16)
-			stbi__err("wrong channel count");
-		h = (int) stbi__get32be();
-		w = (int) stbi__get32be();
-		bitdepth = stbi__get16be();
-		if (bitdepth != 8 && bitdepth != 16)
-			stbi__err("unsupported bit depth");
-		if (stbi__get16be() != 3)
-			stbi__err("wrong color format");
-		stbi__skip((int) stbi__get32be());
-		stbi__skip((int) stbi__get32be());
-		stbi__skip((int) stbi__get32be());
-		compression = stbi__get16be();
-		if (compression > 1)
-			stbi__err("bad compression");
+    private int stbi__psd_decode_rle16(FakePtrByte po, int pixelCount) throws Exception {
+        FakePtrByte p = po.clone();
+        int count = 0;
+        while (pixelCount - count > 0) {
+            int len = stbi__get8();
+            if (len == 128) {
+                // no-op
+            } else if (len < 128) {
+                len++; // literal run of 'len' samples
+                if (len > pixelCount - count) return 0;
+                count += len;
+                while (len-- != 0) {
+                    int v = stbi__get16be();            // one 16-bit sample
+                    p.set((short)((v >> 8) & 0xFF));     // high byte
+                    p.setAt(1, (short)(v & 0xFF));       // low byte
+                    p.move(8);                           // advance to next pixel, same channel (RGBA16 -> 8 bytes/pixel)
+                }
+            } else { // len > 128
+                int run = 257 - len;                    // repeat run
+                if (run > pixelCount - count) return 0;
+                int v = stbi__get16be();
+                count += run;
+                while (run-- != 0) {
+                    p.set((short)((v >> 8) & 0xFF));
+                    p.setAt(1, (short)(v & 0xFF));
+                    p.move(8);
+                }
+            }
+        }
+        return 1;
+    }
 
-		int bits_per_channel = 8;
-		if (compression == 0 && bitdepth == 16 && bpc == 16) {
-			_out_ = new byte[8 * w * h];
-			bits_per_channel = 16;
-		} else {
-			_out_ = new byte[4 * w * h];
-		}
+    private ImageResult InternalDecode(ColorComponents requiredComponents, int bpc) throws Exception {
+        int pixelCount, channelCount, compression, channel, i, bitdepth, w, h;
+        byte[] _out_;
 
-		pixelCount = w * h;
+        if (stbi__get32be() != 0x38425053) stbi__err("not PSD");
+        if (stbi__get16be() != 1)          stbi__err("wrong version");
+        stbi__skip(6);
+        channelCount = stbi__get16be();
+        if (channelCount < 0 || channelCount > 16) stbi__err("wrong channel count");
+        h = (int) stbi__get32be();
+        w = (int) stbi__get32be();
+        bitdepth = stbi__get16be();
+        if (bitdepth != 8 && bitdepth != 16) stbi__err("unsupported bit depth");
+        if (stbi__get16be() != 3)            stbi__err("wrong color format"); // RGB
+        stbi__skip((int) stbi__get32be());   // color mode data
+        stbi__skip((int) stbi__get32be());   // image resources
+        stbi__skip((int) stbi__get32be());   // layer/mask
+        compression = stbi__get16be();       // 0 = raw, 1 = RLE
+        if (compression > 1) stbi__err("bad compression");
 
-		FakePtrByte ptr = new FakePtrByte(_out_);
-		if (compression != 0) {
-			stbi__skip(h * channelCount * 2);
-			for (channel = 0; channel < 4; channel++) {
-				FakePtrByte p = new FakePtrByte(ptr, channel);
-				if (channel >= channelCount) {
-					for (i = 0; i < pixelCount; i++, p.move(4)) p.set((channel == 3 ? 255 : 0));
-				} else {
-					if (stbi__psd_decode_rle(p, pixelCount) == 0) stbi__err("corrupt");
-				}
-			}
-		} else {
-			for (channel = 0; channel < 4; channel++)
-				if (channel >= channelCount) {
-					if (bitdepth == 16 && bpc == 16)
-						throw new UnsupportedOperationException("16-bit images are not supported yet");
-					/*							int* q = ((int*)(ptr)) + channel;
-												int val = (int)((channel) == (3) ? 65535 : 0);
-												for (i = (int)(0); (i) < (pixelCount); i++, q += 4)
-												{
-													*q = (int)(val);
-												}*/
+        // Decide output bit depth: if caller asks for 16 (bpc==16) and PSD has 16, output 16; else 8-bit.
+        int bits_per_channel = (bitdepth == 16 && bpc == 16) ? 16 : 8;
+        _out_ = new byte[(bits_per_channel == 16 ? 8 : 4) * w * h];
+        pixelCount = w * h;
 
-					FakePtrByte p = new FakePtrByte(ptr, channel);
-					short val = (short) (channel == 3 ? 255 : 0);
-					for (i = 0; i < pixelCount; i++, p.move(4)) p.set(val);
-				} else {
-					if (bits_per_channel == 16)
-						throw new UnsupportedOperationException("16-bit images are not supported yet");
-					/*							int* q = ((int*)(ptr)) + channel;
-												for (i = (int)(0); (i) < (pixelCount); i++, q += 4)
-												{
-													*q = ((int)(stbi__get16be()));
-												}*/
+        FakePtrByte ptr = new FakePtrByte(_out_);
 
-					FakePtrByte p = new FakePtrByte(ptr, channel);
-					if (bitdepth == 16)
-						for (i = 0; i < pixelCount; i++, p.move(4))
-							p.set((stbi__get16be() >> 8));
-					else
-						for (i = 0; i < pixelCount; i++, p.move(4))
-							p.set(stbi__get8());
-				}
-		}
+        if (compression != 0) {
+            // Skip per-row byte counts: h * channelCount * 2 bytes
+            stbi__skip(h * channelCount * 2);
 
-		if (channelCount >= 4) {
-			if (bits_per_channel == 16)
-				throw new UnsupportedOperationException("16-bit images are not supported yet");
-			/*					for (i = (int)(0); (i) < (w * h); ++i)
-								{
-									int* pixel = (int*)(ptr) + 4 * i;
-									if ((pixel[3] != 0) && (pixel[3] != 65535))
-									{
-										float a = (float)(pixel[3] / 65535.0f);
-										float ra = (float)(1.0f / a);
-										float inv_a = (float)(65535.0f * (1 - ra));
-										pixel[0] = ((int)(pixel[0] * ra + inv_a));
-										pixel[1] = ((int)(pixel[1] * ra + inv_a));
-										pixel[2] = ((int)(pixel[2] * ra + inv_a));
-									}
-								}*/
-			for (i = 0; i < w * h; ++i) {
-				FakePtrByte pixel = new FakePtrByte(ptr, 4 * i);
-				if (pixel.getAt(3) != 0 && pixel.getAt(3) != 255) {
-					float a = pixel.getAt(3) / 255.0f;
-					float ra = 1.0f / a;
-					float inv_a = 255.0f * (1 - ra);
-					pixel.setAt(0, (int) (pixel.getAt(0) * ra + inv_a));
-					pixel.setAt(1, (int) (pixel.getAt(1) * ra + inv_a));
-					pixel.setAt(2, (int) (pixel.getAt(2) * ra + inv_a));
-				}
-			}
-		}
+            for (channel = 0; channel < 4; channel++) {
+                FakePtrByte p = new FakePtrByte(ptr, channel); // channel offset 0..3
+                if (channel >= channelCount) {
+                    // Fill missing channels
+                    if (bits_per_channel == 16) {
+                        // default: A=0xFFFF, others=0x0000
+                        int hi = (channel == 3) ? 0xFF : 0x00;
+                        int lo = (channel == 3) ? 0xFF : 0x00;
+                        for (i = 0; i < pixelCount; i++, p.move(8)) {
+                            p.set((short)hi);
+                            p.setAt(1, (short)lo);
+                        }
+                    } else {
+                        short val = (short)(channel == 3 ? 255 : 0);
+                        for (i = 0; i < pixelCount; i++, p.move(4)) p.set(val);
+                    }
+                } else {
+                    // Decode one planar channel into interleaved RGBA
+                    if (bits_per_channel == 16) {
+                        if (stbi__psd_decode_rle16(p, pixelCount) == 0) stbi__err("corrupt");
+                    } else {
+                        if (stbi__psd_decode_rle(p, pixelCount) == 0) stbi__err("corrupt");
+                    }
+                }
+            }
+        } else {
+            // Raw (uncompressed) planar data
+            for (channel = 0; channel < 4; channel++) {
+                FakePtrByte p = new FakePtrByte(ptr, channel);
+                if (channel >= channelCount) {
+                    if (bits_per_channel == 16) {
+                        int hi = (channel == 3) ? 0xFF : 0x00;
+                        int lo = (channel == 3) ? 0xFF : 0x00;
+                        for (i = 0; i < pixelCount; i++, p.move(8)) {
+                            p.set((short)hi);
+                            p.setAt(1, (short)lo);
+                        }
+                    } else {
+                        short val = (short)(channel == 3 ? 255 : 0);
+                        for (i = 0; i < pixelCount; i++, p.move(4)) p.set(val);
+                    }
+                } else {
+                    if (bits_per_channel == 16) {
+                        // Read 16-bit sample, store big-endian, advance 8
+                        for (i = 0; i < pixelCount; i++, p.move(8)) {
+                            int v = stbi__get16be();
+                            p.set((short)((v >> 8) & 0xFF));
+                            p.setAt(1, (short)(v & 0xFF));
+                        }
+                    } else {
+                        // We output 8-bit; if PSD is 16-bit, drop low byte (>>8), else just read a byte
+                        if (bitdepth == 16) {
+                            for (i = 0; i < pixelCount; i++, p.move(4))
+                                p.set((short)(stbi__get16be() >> 8));
+                        } else {
+                            for (i = 0; i < pixelCount; i++, p.move(4))
+                                p.set(stbi__get8());
+                        }
+                    }
+                }
+            }
+        }
 
-		int req_comp = ColorComponents.toReqComp(requiredComponents);
-		if (req_comp != 0 && req_comp != 4) {
-			if (bits_per_channel == 16)
-				_out_ = Utility.stbi__convert_format16(_out_, 4, req_comp, w, h);
-			else
-				_out_ = Utility.stbi__convert_format(_out_, 4, req_comp, w, h);
-		}
+        // Un-premultiply straight alpha if PSD stored premultiplied data (match your 8-bit logic)
+        if (channelCount >= 4) {
+            if (bits_per_channel == 16) {
+                for (int px = 0; px < w * h; ++px) {
+                    int off = px * 8;
+                    int r = (( _out_[off    ] & 0xFF) << 8) | (_out_[off + 1] & 0xFF);
+                    int g = (( _out_[off + 2] & 0xFF) << 8) | (_out_[off + 3] & 0xFF);
+                    int b = (( _out_[off + 4] & 0xFF) << 8) | (_out_[off + 5] & 0xFF);
+                    int a = (( _out_[off + 6] & 0xFF) << 8) | (_out_[off + 7] & 0xFF);
+                    if (a != 0 && a != 65535) {
+                        float af = a / 65535.0f;
+                        float ra = 1.0f / af;
+                        float inv_a = 65535.0f * (1 - ra);
+                        int nr = (int)(r * ra + inv_a);
+                        int ng = (int)(g * ra + inv_a);
+                        int nb = (int)(b * ra + inv_a);
+                        if (nr < 0) nr = 0; else if (nr > 65535) nr = 65535;
+                        if (ng < 0) ng = 0; else if (ng > 65535) ng = 65535;
+                        if (nb < 0) nb = 0; else if (nb > 65535) nb = 65535;
+                        _out_[off    ] = (byte)((nr >> 8) & 0xFF); _out_[off + 1] = (byte)(nr & 0xFF);
+                        _out_[off + 2] = (byte)((ng >> 8) & 0xFF); _out_[off + 3] = (byte)(ng & 0xFF);
+                        _out_[off + 4] = (byte)((nb >> 8) & 0xFF); _out_[off + 5] = (byte)(nb & 0xFF);
+                    }
+                }
+            } else {
+                for (i = 0; i < w * h; ++i) {
+                    int off = 4 * i;
+                    int a = _out_[off + 3] & 0xFF;
+                    if (a != 0 && a != 255) {
+                        float af = a / 255.0f;
+                        float ra = 1.0f / af;
+                        float inv_a = 255.0f * (1 - ra);
+                        _out_[off    ] = (byte) (( (_out_[off    ] & 0xFF) * ra + inv_a));
+                        _out_[off + 1] = (byte) (( (_out_[off + 1] & 0xFF) * ra + inv_a));
+                        _out_[off + 2] = (byte) (( (_out_[off + 2] & 0xFF) * ra + inv_a));
+                    }
+                }
+            }
+        }
 
-		return new ImageResult(w,
-				h,
-				ColorComponents.RedGreenBlueAlpha,
-				requiredComponents != null
-						? requiredComponents
-						: ColorComponents.RedGreenBlueAlpha,
-				bits_per_channel,
-				_out_
-		);
-	}
+        int req_comp = ColorComponents.toReqComp(requiredComponents);
+        if (req_comp != 0 && req_comp != 4) {
+            if (bits_per_channel == 16)
+                _out_ = Utility.stbi__convert_format16(_out_, 4, req_comp, w, h);
+            else
+                _out_ = Utility.stbi__convert_format(_out_, 4, req_comp, w, h);
+        }
 
-	public static boolean Test(byte[] data) {
+        return new ImageResult(
+                w, h,
+                ColorComponents.RedGreenBlueAlpha,
+                requiredComponents != null ? requiredComponents : ColorComponents.RedGreenBlueAlpha,
+                bits_per_channel,
+                _out_
+        );
+    }
+
+    public static boolean Test(byte[] data) {
 		try {
 			ByteArrayInputStream stream = new ByteArrayInputStream(data);
 			return Utility.stbi__get32be(stream) == 0x38425053;

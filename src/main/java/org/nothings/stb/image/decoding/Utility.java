@@ -3,7 +3,7 @@ package org.nothings.stb.image.decoding;
 import java.io.IOException;
 import java.io.InputStream;
 
-class Utility
+public class Utility
 {
 	public static int stbi__bitreverse16(int n) {
 		n = ((n & 0xAAAA) >> 1) | ((n & 0x5555) << 1);
@@ -70,112 +70,180 @@ class Utility
 		return ((r * 77) + (g * 150) + (29 * b)) >> 8;
 	}
 
-	public static byte[] stbi__convert_format16(byte[] data, int img_n, int req_comp, long x, long y)
-	{
-		throw new UnsupportedOperationException("16-bit images are not supported yet");
-/*			int i = 0;
-		int j = 0;
-		if ((req_comp) == (img_n))
-			return data;
+	public static byte[] stbi__convert_format16(byte[] data, int img_n, int req_comp, long x, long y) throws Exception {
+        int xi = (int)x, yi = (int)y;
+        if (req_comp == img_n) return data;
 
-		short[] good = new short[req_comp * x * y * 2];
-		ShortFakePtr dataPtr = new ShortFakePtr(data);
-		ShortFakePtr goodPtr = new ShortFakePtr(good);
-		for (j = (int)(0); (j) < ((int)(y)); ++j)
-		{
-			int* src = (int*)dataPtr + j * x * img_n;
-			int* dest = (int*)goodPtr + j * x * req_comp;
-			switch (((img_n) * 8 + (req_comp)))
-			{
-				case ((1) * 8 + (2)):
-					for (i = (int)(x - 1); (i) >= (0); --i, src += 1, dest += 2)
-					{
-						dest[0] = src.getAt(0);
-						dest[1] = (int)(0xffff);
-					}
-					break;
-				case ((1) * 8 + (3)):
-					for (i = (int)(x - 1); (i) >= (0); --i, src += 1, dest += 3)
-					{
-						dest[0] = (int)(dest[1] = (int)(dest[2] = src.getAt(0)));
-					}
-					break;
-				case ((1) * 8 + (4)):
-					for (i = (int)(x - 1); (i) >= (0); --i, src += 1, dest += 4)
-					{
-						dest[0] = (int)(dest[1] = (int)(dest[2] = src.getAt(0)));
-						dest[3] = (int)(0xffff);
-					}
-					break;
-				case ((2) * 8 + (1)):
-					for (i = (int)(x - 1); (i) >= (0); --i, src += 2, dest += 1)
-					{
-						dest[0] = src.getAt(0);
-					}
-					break;
-				case ((2) * 8 + (3)):
-					for (i = (int)(x - 1); (i) >= (0); --i, src += 2, dest += 3)
-					{
-						dest[0] = (int)(dest[1] = (int)(dest[2] = src.getAt(0)));
-					}
-					break;
-				case ((2) * 8 + (4)):
-					for (i = (int)(x - 1); (i) >= (0); --i, src += 2, dest += 4)
-					{
-						dest[0] = (int)(dest[1] = (int)(dest[2] = src.getAt(0)));
-						dest[3] = src.getAt(1);
-					}
-					break;
-				case ((3) * 8 + (4)):
-					for (i = (int)(x - 1); (i) >= (0); --i, src += 3, dest += 4)
-					{
-						dest[0] = src.getAt(0);
-						dest[1] = src.getAt(1);
-						dest[2] = src.getAt(2);
-						dest[3] = (int)(0xffff);
-					}
-					break;
-				case ((3) * 8 + (1)):
-					for (i = (int)(x - 1); (i) >= (0); --i, src += 3, dest += 1)
-					{
-						dest[0] = (int)(stbi__compute_y_16(src.getAt(0), src.getAt(1), src.getAt(2)));
-					}
-					break;
-				case ((3) * 8 + (2)):
-					for (i = (int)(x - 1); (i) >= (0); --i, src += 3, dest += 2)
-					{
-						dest[0] = (int)(stbi__compute_y_16(src.getAt(0), src.getAt(1), src.getAt(2)));
-						dest[1] = (int)(0xffff);
-					}
-					break;
-				case ((4) * 8 + (1)):
-					for (i = (int)(x - 1); (i) >= (0); --i, src += 4, dest += 1)
-					{
-						dest[0] = (int)(stbi__compute_y_16(src.getAt(0), src.getAt(1), src.getAt(2)));
-					}
-					break;
-				case ((4) * 8 + (2)):
-					for (i = (int)(x - 1); (i) >= (0); --i, src += 4, dest += 2)
-					{
-						dest[0] = (int)(stbi__compute_y_16(src.getAt(0), src.getAt(1), src.getAt(2)));
-						dest[1] = (int)(src[3]);
-					}
-					break;
-				case ((4) * 8 + (3)):
-					for (i = (int)(x - 1); (i) >= (0); --i, src += 4, dest += 3)
-					{
-						dest[0] = src.getAt(0);
-						dest[1] = src.getAt(1);
-						dest[2] = src.getAt(2);
-					}
-					break;
-				default:
-					Decoder.stbi__err("0");
-					break;
-			}
-		}
+        int inStep  = img_n * 2;
+        int outStep = req_comp * 2;
+        byte[] out = new byte[yi * xi * outStep];
 
-		return good;*/
+        for (int j = 0; j < yi; ++j) {
+            int srcRow = j * xi * inStep;
+            int dstRow = j * xi * outStep;
+
+            switch (img_n * 8 + req_comp) {
+                // 1 -> 2 (G -> GA)
+                case (1 * 8 + 2): {
+                    for (int i = xi - 1; i >= 0; --i) {
+                        int s = srcRow + i * inStep;
+                        int d = dstRow + i * outStep;
+                        // gray
+                        out[d]   = data[s];
+                        out[d+1] = data[s+1];
+                        // alpha = 0xFFFF
+                        out[d+2] = (byte)0xFF; out[d+3] = (byte)0xFF;
+                    }
+                    break;
+                }
+                // 1 -> 3 (G -> RGB)
+                case (1 * 8 + 3): {
+                    for (int i = xi - 1; i >= 0; --i) {
+                        int s = srcRow + i * inStep;
+                        int d = dstRow + i * outStep;
+                        byte gh = data[s], gl = data[s+1];
+                        out[d]   = gh; out[d+1] = gl; // R
+                        out[d+2] = gh; out[d+3] = gl; // G
+                        out[d+4] = gh; out[d+5] = gl; // B
+                    }
+                    break;
+                }
+                // 1 -> 4 (G -> RGBA)
+                case (1 * 8 + 4): {
+                    for (int i = xi - 1; i >= 0; --i) {
+                        int s = srcRow + i * inStep;
+                        int d = dstRow + i * outStep;
+                        byte gh = data[s], gl = data[s+1];
+                        out[d]   = gh; out[d+1] = gl; // R
+                        out[d+2] = gh; out[d+3] = gl; // G
+                        out[d+4] = gh; out[d+5] = gl; // B
+                        out[d+6] = (byte)0xFF; out[d+7] = (byte)0xFF; // A
+                    }
+                    break;
+                }
+                // 2 -> 1 (GA -> G)
+                case (2 * 8 + 1): {
+                    for (int i = xi - 1; i >= 0; --i) {
+                        int s = srcRow + i * inStep;
+                        int d = dstRow + i * outStep;
+                        out[d]   = data[s];
+                        out[d+1] = data[s+1];
+                    }
+                    break;
+                }
+                // 2 -> 3 (GA -> RGB)
+                case (2 * 8 + 3): {
+                    for (int i = xi - 1; i >= 0; --i) {
+                        int s = srcRow + i * inStep;
+                        int d = dstRow + i * outStep;
+                        byte gh = data[s], gl = data[s+1];
+                        out[d]   = gh; out[d+1] = gl;
+                        out[d+2] = gh; out[d+3] = gl;
+                        out[d+4] = gh; out[d+5] = gl;
+                    }
+                    break;
+                }
+                // 2 -> 4 (GA -> RGBA)
+                case (2 * 8 + 4): {
+                    for (int i = xi - 1; i >= 0; --i) {
+                        int s = srcRow + i * inStep;
+                        int d = dstRow + i * outStep;
+                        byte gh = data[s], gl = data[s+1];
+                        out[d]   = gh; out[d+1] = gl;
+                        out[d+2] = gh; out[d+3] = gl;
+                        out[d+4] = gh; out[d+5] = gl;
+                        out[d+6] = data[s+2]; out[d+7] = data[s+3]; // preserve alpha
+                    }
+                    break;
+                }
+                // 3 -> 4 (RGB -> RGBA)
+                case (3 * 8 + 4): {
+                    for (int i = xi - 1; i >= 0; --i) {
+                        int s = srcRow + i * inStep;
+                        int d = dstRow + i * outStep;
+                        out[d]   = data[s];   out[d+1] = data[s+1];
+                        out[d+2] = data[s+2]; out[d+3] = data[s+3];
+                        out[d+4] = data[s+4]; out[d+5] = data[s+5];
+                        out[d+6] = (byte)0xFF; out[d+7] = (byte)0xFF;
+                    }
+                    break;
+                }
+                // 3 -> 1 (RGB -> G)
+                case (3 * 8 + 1): {
+                    for (int i = xi - 1; i >= 0; --i) {
+                        int s = srcRow + i * inStep;
+                        int d = dstRow + i * outStep;
+                        int r = ((data[s]   & 0xFF) << 8) | (data[s+1] & 0xFF);
+                        int g = ((data[s+2] & 0xFF) << 8) | (data[s+3] & 0xFF);
+                        int b = ((data[s+4] & 0xFF) << 8) | (data[s+5] & 0xFF);
+                        int y16 = stbi__compute_y_16(r, g, b) & 0xFFFF;
+                        out[d]   = (byte)((y16 >> 8) & 0xFF);
+                        out[d+1] = (byte)(y16 & 0xFF);
+                    }
+                    break;
+                }
+                // 3 -> 2 (RGB -> GA)
+                case (3 * 8 + 2): {
+                    for (int i = xi - 1; i >= 0; --i) {
+                        int s = srcRow + i * inStep;
+                        int d = dstRow + i * outStep;
+                        int r = ((data[s]   & 0xFF) << 8) | (data[s+1] & 0xFF);
+                        int g = ((data[s+2] & 0xFF) << 8) | (data[s+3] & 0xFF);
+                        int b = ((data[s+4] & 0xFF) << 8) | (data[s+5] & 0xFF);
+                        int y16 = stbi__compute_y_16(r, g, b) & 0xFFFF;
+                        out[d]   = (byte)((y16 >> 8) & 0xFF);
+                        out[d+1] = (byte)(y16 & 0xFF);
+                        out[d+2] = (byte)0xFF; out[d+3] = (byte)0xFF; // A = 0xFFFF
+                    }
+                    break;
+                }
+                // 4 -> 1 (RGBA -> G)
+                case (4 * 8 + 1): {
+                    for (int i = xi - 1; i >= 0; --i) {
+                        int s = srcRow + i * inStep;
+                        int d = dstRow + i * outStep;
+                        int r = ((data[s]   & 0xFF) << 8) | (data[s+1] & 0xFF);
+                        int g = ((data[s+2] & 0xFF) << 8) | (data[s+3] & 0xFF);
+                        int b = ((data[s+4] & 0xFF) << 8) | (data[s+5] & 0xFF);
+                        int y16 = stbi__compute_y_16(r, g, b) & 0xFFFF;
+                        out[d]   = (byte)((y16 >> 8) & 0xFF);
+                        out[d+1] = (byte)(y16 & 0xFF);
+                    }
+                    break;
+                }
+                // 4 -> 2 (RGBA -> GA)
+                case (4 * 8 + 2): {
+                    for (int i = xi - 1; i >= 0; --i) {
+                        int s = srcRow + i * inStep;
+                        int d = dstRow + i * outStep;
+                        int r = ((data[s]   & 0xFF) << 8) | (data[s+1] & 0xFF);
+                        int g = ((data[s+2] & 0xFF) << 8) | (data[s+3] & 0xFF);
+                        int b = ((data[s+4] & 0xFF) << 8) | (data[s+5] & 0xFF);
+                        int y16 = stbi__compute_y_16(r, g, b) & 0xFFFF;
+                        out[d]   = (byte)((y16 >> 8) & 0xFF);
+                        out[d+1] = (byte)(y16 & 0xFF);
+                        out[d+2] = data[s+6]; out[d+3] = data[s+7]; // keep alpha
+                    }
+                    break;
+                }
+                // 4 -> 3 (RGBA -> RGB)
+                case (4 * 8 + 3): {
+                    for (int i = xi - 1; i >= 0; --i) {
+                        int s = srcRow + i * inStep;
+                        int d = dstRow + i * outStep;
+                        out[d]   = data[s];   out[d+1] = data[s+1];
+                        out[d+2] = data[s+2]; out[d+3] = data[s+3];
+                        out[d+4] = data[s+4]; out[d+5] = data[s+5];
+                    }
+                    break;
+                }
+                default:
+                    Decoder.stbi__err("0");
+                    break;
+            }
+        }
+
+        return out;
 	}
 
 	public static byte[] stbi__convert_format(byte[] data, int img_n, int req_comp, int x, int y) throws Exception
@@ -296,59 +364,29 @@ class Utility
 		return good;
 	}
 
+    public static byte[] stbi__convert_16_to_8(byte[] data16be)
+    {
+        // PNG stores 16-bit samples big-endian. We keep the high byte.
+        int nSamples = data16be.length / 2;
+        byte[] out = new byte[nSamples];
+        for (int i = 0, s = 0; i < nSamples; ++i, s += 2) {
+            out[i] = data16be[s]; // high byte == (value >> 8)
+        }
+        return out;
+    }
 
-	public static short[] stbi__convert_16_to_8(short[] orig, int w, int h, int channels)
+	public static byte[] stbi__convert_16_to_8(byte[] orig, int w, int h, int channels)
 	{
-		throw new UnsupportedOperationException("16-bit images are not supported yet");
-
-/*			int i = 0;
-		int img_len = (int)(w * h * channels);
-		short[] reduced = new short[img_len];
-
-		fixed (short* ptr2 = &orig[0])
-		{
-			int* ptr = (int*)ptr2;
-			for (i = (int)(0); (i) < (img_len); ++i)
-			{
-				reduced[i] = ((short)((ptr[i] >> 8) & 0xFF));
-			}
-		}
-		return reduced;*/
+        int expected = w * h * channels * 2;
+        if (orig.length != expected) {
+            // fall back to simple version; or throw if you prefer strictness
+            return stbi__convert_16_to_8(orig);
+        }
+        byte[] out = new byte[w * h * channels];
+        for (int i = 0, s = 0; i < out.length; ++i, s += 2) {
+            out[i] = orig[s];
+        }
+        return out;
 	}
 
-	public static int[] stbi__convert_8_to_16(short[] orig, int w, int h, int channels)
-	{
-		int i = 0;
-		int img_len = w * h * channels;
-		int[] enlarged = new int[img_len];
-		for (i = 0; (i) < (img_len); ++i)
-		{
-			enlarged[i] = (orig[i] << 8) + orig[i];
-		}
-
-		return enlarged;
-	}
-
-/*	public static void stbi__vertical_flip(short[] image, int w, int h, int shorts_per_pixel)
-	{
-		int row = 0;
-		int shorts_per_row = w * shorts_per_pixel;
-		short[] temp = new short[2048];
-		for (row = (int)(0); (row) < (h >> 1); row++)
-		{
-			ShortFakePtr row0 = new ShortFakePtr(image, (int)(row * shorts_per_row));
-			ShortFakePtr row1 = new ShortFakePtr(image, (int)((h - row - 1) * shorts_per_row));
-			int shorts_left = shorts_per_row;
-			while ((shorts_left) != 0)
-			{
-				int shorts_copy = (((shorts_left) < (2048)) ? shorts_left : 2048);
-				Utility.memcpy(temp, row0, shorts_copy);
-				Utility.memcpy(row0, row1, shorts_copy);
-				Utility.memcpy(row1, temp, shorts_copy);
-				row0 += shorts_copy;
-				row1 += shorts_copy;
-				shorts_left -= shorts_copy;
-			}
-		}
-	}*/
 }
